@@ -1,0 +1,53 @@
+<!-- checker_channel/templates/checker_channel/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Checker Channel Room</title>
+</head>
+<body>
+    <p>Below appear messages coming from the site-checker module (first version)</p>
+    <textarea readonly="true", id="channel-log" cols="100" rows="20"></textarea><br/>
+    <!--
+    <input id="channel-message-input" type="text" size="100"/>
+    <br/>
+    <input id="channel-message-submit" type="button" value="Send"/>
+    -->
+</body>
+<script>
+    var roomName = {{ room_name_json }};
+
+    var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/checker_channel/' + roomName + '/');
+
+    chatSocket.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        var message = data['message'];
+        var url = data['url']
+        var timestamp = data['timestamp']
+        document.querySelector('#channel-log').value += (url + ': ' + message + ' (' + timestamp + ')' +  '\n');
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#channel-message-input').focus();
+    document.querySelector('#channel-message-input').onkeyup = function(e) {
+        if (e.keyCode === 13) {  // enter, return
+            document.querySelector('#channel-message-submit').click();
+        }
+    };
+
+    document.querySelector('#channel-message-submit').onclick = function(e) {
+        var messageInputDom = document.querySelector('#channel-message-input');
+        var message = messageInputDom.value;
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+
+        messageInputDom.value = '';
+    };
+</script>
+</html>
